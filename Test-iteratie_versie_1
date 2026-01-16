@@ -1,0 +1,45 @@
+const int pingPin = 7; 
+const int ledPin = 3; 
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);
+  
+ // Led test bij start
+  digitalWrite(ledPin, HIGH);
+  delay(500);
+  digitalWrite(ledPin, LOW);
+}
+
+void loop() {
+  long duur, afstand;
+
+
+  pinMode(pingPin, OUTPUT);
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(5); 
+  digitalWrite(pingPin, LOW);
+
+ 
+  pinMode(pingPin, INPUT);
+  duur = pulseIn(pingPin, HIGH);
+
+
+  afstand = duur / 29 / 2; // Berekening in cm
+
+ 
+  Serial.print("Afstand: ");
+  Serial.print(afstand);
+  Serial.println(" cm");
+
+
+  if (afstand > 0 && afstand < 20) {
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+
+  delay(100);
+}
