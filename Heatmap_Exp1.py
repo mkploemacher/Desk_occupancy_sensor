@@ -5,8 +5,6 @@ import os
 
 print("--- Start Script ---")
 
-# 1. Data Inladen
-# Pas dit pad eventueel aan als het bestand elders staat
 file_path = '/Users/Maartenkiko/Desktop/Heatmap Exp/Heatmap_Experiment.csv'
 
 if os.path.exists(file_path):
@@ -22,7 +20,7 @@ else:
     print("Check of de naam en map exact kloppen.")
     exit()
 
-# 2. Data Schoonmaken
+# Data Schoonmaken
 print("Stap 2: Data schoonmaken...")
 def clean_decibel_value(val):
     val_str = str(val).replace('.', '')
@@ -32,10 +30,8 @@ def clean_decibel_value(val):
     return None
 
 df['decibel_clean'] = df['decibel_level'].apply(clean_decibel_value)
-# Print even een voorbeeldje om te zien of het werkt
-print(f" - Voorbeeld schoongemaakte data: {df['decibel_clean'].head().tolist()}")
 
-# 3. Data Transformatie
+# Data Transformatie
 print("Stap 3: Pivot table maken...")
 heatmap_data = df.pivot_table(
     index='day_of_week', 
@@ -44,7 +40,7 @@ heatmap_data = df.pivot_table(
     aggfunc='mean'
 )
 
-# 4. Plotten
+# Plotten
 print("Stap 4: Plot genereren...")
 plt.figure(figsize=(14, 8))
 
@@ -55,12 +51,12 @@ plt.title('Geluidsniveau Heatmap: Uur vs Dag (Volledige Dataset)')
 plt.xlabel('Uur van de dag (0-23)')
 plt.ylabel('Dag van de week')
 
-# Sla het bestand op (veiligste optie)
+
 output_file = 'heatmap_resultaat.png'
 plt.savefig(output_file)
 print(f"Stap 5: Plot opgeslagen als '{output_file}' in dezelfde map als dit script.")
 
-# Probeer het ook te tonen
+
 print("Probeer plot te tonen...")
 plt.show()
 
