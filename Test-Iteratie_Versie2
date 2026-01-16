@@ -1,0 +1,111 @@
+
+const int wachttijd = 5000; // Wachttijd voor gele led 5 seconden
+
+const int pinRood  = 12; 
+const int pinGroen = 14; 
+const int pinGeel  = 26; 
+const int pinBlauw = 25; 
+
+
+#define RXD2 16  // Gele kabel (sensor TX)
+#define TXD2 17  // Groene kabel (sensor RX)
+
+// Variabelen
+unsigned long startTijdVerandering = 0; 
+int actieveStatus = 2; // Start status 2 vrij
+
+void setup() {
+  Serial.begin(115200);
+  Serial2.setTimeout(50); 
+  
+
+  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+
+  pinMode(pinRood, OUTPUT);
+  pinMode(pinGroen, OUTPUT);
+  pinMode(pinGeel, OUTPUT);
+  pinMode(pinBlauw, OUTPUT);
+
+  zetKleuren(LOW, HIGH, LOW, LOW);
+  Serial.println("Live Data naar Monitor");
+}
+
+void loop() {
+  if (Serial2.available()) {
+    String regel = Serial2.readStringUntil('\n');
+    regel.trim();
+
+    if (regel.startsWith("Range")) {
+      String getalTekst = regel.substring(6);
+      int afstand = getalTekst.toInt();
+      if (afstand == 0) return; 
+
+      Serial.print("Afstand: ");
+      Serial.print(afstand);
+      Serial.print(" cm");
+
+      if (startTijdVerandering > 0) {
+         unsigned long verstreken = millis() - startTijdVerandering;
+         Serial.print(" | TIMER: ");
+         Serial.print(verstreken);
+         Serial.print(" / ");
+         Serial.print(wachttijd);
+         Serial.print(" ms");
+      }
+      
+      Serial.println(); 
+
+
+      if (afstand <= 5) {
+        if (digitalRead(pinBlauw) == LOW) {
+           Serial.println("Sabotage!");
+        }
+        zetKleuren(LOW, LOW, LOW, HIGH); // Blauw AAN
+        startTijdVerandering = 0; 
+        return; 
+      }
+
+      int sensorZiet = -1;
+      if (afstand < 60) sensorZiet = 1; // Bezet
+      else              sensorZiet = 2; // Vrij
+
+
+      if (sensorZiet == actieveStatus) {
+    
+        startTijdVerandering = 0;
+        
+
+        if (actieveStatus == 1) zetKleuren(HIGH, LOW, LOW, LOW);
+        if (actieveStatus == 2) zetKleuren(LOW, HIGH, LOW, LOW);
+      }
+      else {
+ 
+        if (startTijdVerandering == 0) {
+          startTijdVerandering = millis(); 
+        }
+
+        if (millis() - startTijdVerandering < wachttijd) {
+   
+          zetKleuren(LOW, LOW, HIGH, LOW); 
+        } 
+        else {
+   
+          actieveStatus = sensorZiet;
+          startTijdVerandering = 0; 
+          
+          Serial.println("-------------------------");
+          Serial.print("Statuswijziging naar ");
+          Serial.println(actieveStatus == 1 ? "Bezet" : "Vrij");
+          Serial.println("-------------------------");
+        }
+      }
+    }
+  }
+}
+
+void zetKleuren(int r, int g, int y, int b) {
+  digitalWrite(pinRood, r);
+  digitalWrite(pinGroen, g);
+  digitalWrite(pinGeel, y);
+  digitalWrite(pinBlauw, b);
+}
