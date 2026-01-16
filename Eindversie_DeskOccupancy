@@ -1,0 +1,81 @@
+#include <ArduinoJson.h>
+#include <HardwareSerial.h>
+
+
+const int soundSensorPin = 34; 
+
+// Tafel 1 (mmWave)
+const int RX_PIN_1 = 19;
+const int TX_PIN_1 = 18;
+HardwareSerial SensorSerial1(2); 
+
+// Tafel 2 (mmWave)
+const int RX_PIN_2 = 16;
+const int TX_PIN_2 = 17;
+HardwareSerial SensorSerial2(1); 
+
+void setup() {
+  // Start serial voor communicatie met computer
+  Serial.begin(115200);
+  
+  // Start verbinding met mmWave sensoren
+  SensorSerial1.begin(115200, SERIAL_8N1, RX_PIN_1, TX_PIN_1); 
+  SensorSerial2.begin(115200, SERIAL_8N1, RX_PIN_2, TX_PIN_2);
+
+  pinMode(soundSensorPin, INPUT);
+  
+  delay(1000); 
+}
+
+void loop() {
+  // 1. Data uitlezen
+  int rawSound = analogRead(soundSensorPin);
+  int dist1 = readMmWaveDistance(SensorSerial1);
+  int dist2 = readMmWaveDistance(SensorSerial2);
+
+  // 2. Status bepalen per tafel
+  String status1 = determineStatus(dist1);
+  String status2 = determineStatus(dist2);
+
+  // 3. JSON bericht opstellen
+  StaticJsonDocument<256> doc;
+  
+  doc["tafel1"] = status1;
+  doc["cm1"] = dist1;
+  
+  doc["tafel2"] = status2;
+  doc["cm2"] = dist2;
+  
+  doc["rawSound"] = rawSound;
+
+  // 4. Versturen naar computer
+  String output;
+  serializeJson(doc, output);
+  Serial.println(output);
+
+  // Wacht 0.2 seconde voor volgende meting
+  delay(200); 
+}
+
+// HULPFUNCTIES
+
+String determineStatus(int distance) {
+  // 0 betekent vaak dat de sensor niets ziet, dus Vrij
+  if (distance <= 0) return "VRIJ"; 
+  if (distance > 0 && distance < 10) return "BLOKKADE";
+  if (distance >= 10 && distance < 105) return "BEZET";
+  return "VRIJ";
+}
+
+int readMmWaveDistance(HardwareSerial &sensorSerial) {
+  int distance = 0;
+  if (sensorSerial.available()) {
+    // Lees getal uit de serial buffer
+    distance = sensorSerial.parseInt();
+    // Leeg de rest van de buffer
+    while(sensorSerial.available()) {
+      sensorSerial.read(); 
+    }
+  }
+  return distance;
+}
